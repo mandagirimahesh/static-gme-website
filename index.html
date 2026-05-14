@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nokia Snake</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="phone">
+    <div class="bezel-top">NOKIA</div>
+
+    <section class="screen-wrap">
+      <canvas id="game" width="300" height="300" aria-label="Snake game screen"></canvas>
+      <div class="hud">
+        <span id="score">Score: 0</span>
+        <span id="status">Press arrows/WASD or tap controls</span>
+      </div>
+    </section>
+
+    <section class="controls" aria-label="Mobile controls">
+      <button class="control up" data-dir="up">▲</button>
+      <div class="middle-row">
+        <button class="control left" data-dir="left">◀</button>
+        <button class="control down" data-dir="down">▼</button>
+        <button class="control right" data-dir="right">▶</button>
+      </div>
+    </section>
+
+    <div class="help">
+      PC: Arrow keys + WASD<br />
+      Mobile: Tap on-screen controls
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
