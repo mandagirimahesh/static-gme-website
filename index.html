@@ -3,35 +3,48 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nokia Snake</title>
+  <title>Super Mario Adventure - Play Free in Browser</title>
+  <meta name="description" content="Play a Super Mario-inspired browser platform game with smooth graphics, enemies, coins, and checkpoints. Free and fast on desktop and mobile." />
+  <meta name="robots" content="index,follow" />
+  <meta property="og:title" content="Super Mario Adventure - Free Browser Game" />
+  <meta property="og:description" content="Jump, run, collect coins, defeat enemies, and reach the castle in this Mario-themed platform adventure." />
+  <meta property="og:type" content="website" />
+  <link rel="canonical" href="/" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <main class="phone">
-    <div class="bezel-top">NOKIA</div>
+  <header class="hero">
+    <h1>🍄 Super Mario Adventure</h1>
+    <p>Run • Jump • Collect Coins • Beat Goomba-like enemies • Reach the Castle</p>
+  </header>
 
-    <section class="screen-wrap">
-      <canvas id="game" width="300" height="300" aria-label="Snake game screen"></canvas>
+  <main class="layout">
+    <aside class="ad ad-left" aria-label="Advertisement">
+      <p>Ad Space</p>
+      <small>Share your ad format and I can wire it here.</small>
+    </aside>
+
+    <section class="game-card">
       <div class="hud">
-        <span id="score">Score: 0</span>
-        <span id="status">Press arrows/WASD or tap controls</span>
+        <span id="coins">Coins: 0</span>
+        <span id="lives">Lives: 3</span>
+        <span id="status">Status: Ready</span>
+      </div>
+      <canvas id="game" width="960" height="540" aria-label="Mario-style platform game"></canvas>
+      <div class="controls">
+        <strong>Controls:</strong> Arrow keys / A,D to move • Space / W / ↑ to jump • R to restart
       </div>
     </section>
 
-    <section class="controls" aria-label="Mobile controls">
-      <button class="control up" data-dir="up">▲</button>
-      <div class="middle-row">
-        <button class="control left" data-dir="left">◀</button>
-        <button class="control down" data-dir="down">▼</button>
-        <button class="control right" data-dir="right">▶</button>
-      </div>
-    </section>
-
-    <div class="help">
-      PC: Arrow keys + WASD<br />
-      Mobile: Tap on-screen controls
-    </div>
+    <aside class="ad ad-right" aria-label="Advertisement">
+      <p>Ad Space</p>
+      <small>Leaderboard, rectangle, or sticky ad can be added.</small>
+    </aside>
   </main>
+
+  <footer>
+    <p>Mario-style fan project for web gameplay demo.</p>
+  </footer>
 
   <script src="script.js"></script>
 </body>

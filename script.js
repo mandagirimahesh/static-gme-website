@@ -1,134 +1,207 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-const scoreEl = document.getElementById("score");
+
+const coinsEl = document.getElementById("coins");
+const livesEl = document.getElementById("lives");
 const statusEl = document.getElementById("status");
 
-const tileSize = 15;
-const tiles = canvas.width / tileSize;
+const gravity = 0.6;
+const friction = 0.85;
+const worldWidth = 2600;
 
-let snake;
-let direction;
-let queuedDirection;
-let food;
-let score;
-let gameOver;
+const player = {
+  x: 80,
+  y: 120,
+  w: 38,
+  h: 52,
+  vx: 0,
+  vy: 0,
+  speed: 1.2,
+  jump: -12,
+  onGround: false,
+  lives: 3,
+  coins: 0
+};
 
-function reset() {
-  snake = [
-    { x: 10, y: 10 },
-    { x: 9, y: 10 },
-    { x: 8, y: 10 }
-  ];
-  direction = { x: 1, y: 0 };
-  queuedDirection = direction;
-  food = randomFoodPosition();
-  score = 0;
-  gameOver = false;
-  scoreEl.textContent = `Score: ${score}`;
-  statusEl.textContent = "Play!";
+const camera = { x: 0 };
+
+const platforms = [
+  { x: 0, y: 490, w: 2600, h: 50, type: "ground" },
+  { x: 300, y: 430, w: 140, h: 20, type: "brick" },
+  { x: 540, y: 370, w: 170, h: 20, type: "brick" },
+  { x: 820, y: 330, w: 150, h: 20, type: "brick" },
+  { x: 1080, y: 390, w: 190, h: 20, type: "brick" },
+  { x: 1410, y: 340, w: 180, h: 20, type: "brick" },
+  { x: 1710, y: 300, w: 200, h: 20, type: "brick" }
+];
+
+const coins = [220, 350, 580, 610, 1000, 1170, 1470, 1760, 1830, 2300].map((x, i) => ({
+  x,
+  y: i % 2 ? 320 : 260,
+  r: 10,
+  taken: false
+}));
+
+const enemies = [700, 1240, 1540, 2010].map((x) => ({ x, y: 458, w: 30, h: 30, dir: 1 }));
+
+const goal = { x: 2450, y: 380, w: 36, h: 110 };
+const keys = {};
+let won = false;
+
+function resetLevel() {
+  player.x = 80;
+  player.y = 120;
+  player.vx = 0;
+  player.vy = 0;
+  player.onGround = false;
+  camera.x = 0;
+  statusEl.textContent = "Status: Ready";
 }
 
-function randomFoodPosition() {
-  let next;
-  do {
-    next = {
-      x: Math.floor(Math.random() * tiles),
-      y: Math.floor(Math.random() * tiles)
-    };
-  } while (snake?.some((part) => part.x === next.x && part.y === next.y));
-  return next;
-}
-
-function setDirection(key) {
-  const map = {
-    ArrowUp: { x: 0, y: -1 },
-    ArrowDown: { x: 0, y: 1 },
-    ArrowLeft: { x: -1, y: 0 },
-    ArrowRight: { x: 1, y: 0 },
-    w: { x: 0, y: -1 },
-    s: { x: 0, y: 1 },
-    a: { x: -1, y: 0 },
-    d: { x: 1, y: 0 },
-    up: { x: 0, y: -1 },
-    down: { x: 0, y: 1 },
-    left: { x: -1, y: 0 },
-    right: { x: 1, y: 0 }
-  };
-
-  const next = map[key];
-  if (!next) return;
-
-  if (next.x === -direction.x && next.y === -direction.y) return;
-  queuedDirection = next;
-
-  if (gameOver) {
-    reset();
-  }
+function intersects(a, b) {
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
 
 function update() {
-  if (gameOver) return;
+  if (won) return;
 
-  direction = queuedDirection;
+  if (keys.ArrowLeft || keys.a) player.vx -= player.speed;
+  if (keys.ArrowRight || keys.d) player.vx += player.speed;
 
-  const head = {
-    x: snake[0].x + direction.x,
-    y: snake[0].y + direction.y
-  };
+  player.vx *= friction;
+  player.vy += gravity;
 
-  if (
-    head.x < 0 ||
-    head.y < 0 ||
-    head.x >= tiles ||
-    head.y >= tiles ||
-    snake.some((part) => part.x === head.x && part.y === head.y)
-  ) {
-    gameOver = true;
-    statusEl.textContent = "Game Over! Press a key/tap to restart.";
-    return;
+  player.x += player.vx;
+  player.y += player.vy;
+  player.onGround = false;
+
+  platforms.forEach((p) => {
+    if (intersects(player, p)) {
+      const prevBottom = player.y - player.vy + player.h;
+      if (prevBottom <= p.y + 4 && player.vy >= 0) {
+        player.y = p.y - player.h;
+        player.vy = 0;
+        player.onGround = true;
+      }
+    }
+  });
+
+  if ((keys.ArrowUp || keys.w || keys[" "]) && player.onGround) {
+    player.vy = player.jump;
+    player.onGround = false;
   }
 
-  snake.unshift(head);
+  coins.forEach((c) => {
+    if (!c.taken && intersects(player, { x: c.x - c.r, y: c.y - c.r, w: c.r * 2, h: c.r * 2 })) {
+      c.taken = true;
+      player.coins += 1;
+    }
+  });
 
-  if (head.x === food.x && head.y === food.y) {
-    score += 10;
-    scoreEl.textContent = `Score: ${score}`;
-    food = randomFoodPosition();
-  } else {
-    snake.pop();
+  enemies.forEach((e) => {
+    e.x += e.dir * 1.1;
+    if (e.x < 100 || e.x > worldWidth - 100) e.dir *= -1;
+
+    if (intersects(player, e)) {
+      if (player.vy > 2 && player.y + player.h - 6 < e.y + 10) {
+        e.x = -9999;
+        player.vy = -8;
+      } else {
+        player.lives -= 1;
+        statusEl.textContent = "Status: Hit by enemy";
+        if (player.lives <= 0) {
+          statusEl.textContent = "Status: Game Over (Press R)";
+        }
+        resetLevel();
+      }
+    }
+  });
+
+  if (player.y > canvas.height + 300) {
+    player.lives -= 1;
+    statusEl.textContent = "Status: Fell down";
+    resetLevel();
   }
+
+  if (intersects(player, goal)) {
+    won = true;
+    statusEl.textContent = "Status: You Win!";
+  }
+
+  player.x = Math.max(0, Math.min(worldWidth - player.w, player.x));
+  camera.x = Math.max(0, Math.min(worldWidth - canvas.width, player.x - 220));
+
+  coinsEl.textContent = `Coins: ${player.coins}`;
+  livesEl.textContent = `Lives: ${player.lives}`;
 }
 
-function drawCell(x, y, color) {
-  ctx.fillStyle = color;
-  ctx.fillRect(x * tileSize, y * tileSize, tileSize - 1, tileSize - 1);
+function drawBackground() {
+  const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  grad.addColorStop(0, "#70c5ff");
+  grad.addColorStop(1, "#d7f4ff");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
 function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawBackground();
+  ctx.save();
+  ctx.translate(-camera.x, 0);
 
-  drawCell(food.x, food.y, "#1f3019");
-  snake.forEach((part, index) => {
-    drawCell(part.x, part.y, index === 0 ? "#10190d" : "#1a2816");
+  platforms.forEach((p) => {
+    ctx.fillStyle = p.type === "ground" ? "#58b948" : "#b86f35";
+    ctx.fillRect(p.x, p.y, p.w, p.h);
   });
+
+  coins.forEach((c) => {
+    if (c.taken) return;
+    ctx.fillStyle = "#ffd84d";
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  enemies.forEach((e) => {
+    if (e.x < -1000) return;
+    ctx.fillStyle = "#7a3f22";
+    ctx.fillRect(e.x, e.y, e.w, e.h);
+  });
+
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(goal.x + 14, goal.y, 6, goal.h);
+  ctx.fillStyle = "#e02121";
+  ctx.fillRect(goal.x, goal.y, 28, 18);
+
+  ctx.fillStyle = "#dd2f2f";
+  ctx.fillRect(player.x, player.y, player.w, player.h);
+  ctx.fillStyle = "#1e40af";
+  ctx.fillRect(player.x + 6, player.y + 28, player.w - 12, 20);
+
+  ctx.restore();
 }
 
-function tick() {
+function loop() {
   update();
   draw();
+  requestAnimationFrame(loop);
 }
 
-document.addEventListener("keydown", (event) => {
-  const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
-  setDirection(key);
+document.addEventListener("keydown", (e) => {
+  const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  keys[key] = true;
+  if (key === "r") {
+    player.lives = 3;
+    player.coins = 0;
+    coins.forEach((c) => (c.taken = false));
+    won = false;
+    resetLevel();
+  }
 });
 
-document.querySelectorAll(".control").forEach((button) => {
-  button.addEventListener("click", () => {
-    setDirection(button.dataset.dir);
-  });
+document.addEventListener("keyup", (e) => {
+  const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  keys[key] = false;
 });
 
-reset();
-draw();
-setInterval(tick, 120);
+resetLevel();
+loop();
